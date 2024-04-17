@@ -1,0 +1,47 @@
+CompileFlags:
+  Add: [-Wall, -Wextra, -Wpedantic, -Wshadow, -Wno-unused-parameter, -Wno-unused-function]
+
+---
+If:
+  PathMatch: [.*\.h]
+CompileFlags:
+  Add: [-xc-header, -std=c2x]
+  Compiler: clang
+
+---
+If:
+  PathMatch: [.*\.c]
+CompileFlags:
+  Add: [-xc, -std=c2x]
+  Compiler: clang
+
+---
+If:
+  PathMatch: [.*\.hpp, .*\.hh]
+CompileFlags:
+  Add: [-xc++-header, -std=c++23]
+  Compiler: clang++
+
+---
+If:
+  PathMatch: [.*\.cpp, .*\.cc, .*\.cxx, .*\.tcc, .*\.inl]
+CompileFlags:
+  Add: [-xc++, -std=c++23]
+  Compiler: clang++
+
+---
+If:
+  PathMatch: [.*\.cu]
+CompileFlags:
+  Add: [-xcuda, -std=c2x]
+  Compiler: clang
+
+---
+Diagnostics:
+  ClangTidy:
+    Add: [performance*, modernize*, readability*]
+    Remove: [
+      readability-implicit-bool-conversion,
+      readability-identifier-length,
+      readability-inconsistent-declaration-parameter-name,
+    ]
