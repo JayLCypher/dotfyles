@@ -1,40 +1,42 @@
-fastfetch.exe
-oh-my-posh init pwsh | Invoke-Expression
-Import-Module Terminal-Icons
+Clear-Host # Clean the screen
+fastfetch.exe # Run FastFetch
+oh-my-posh init pwsh | Invoke-Expression # Initialize OhMyPosh
+Import-Module Terminal-Icons # Import Terminal Icons
 
-Set-Alias node bun
-Set-Alias npm bun
-Set-Alias wget wget2
+# Set aliases.
+Set-Alias -name node -value bun
+Set-Alias -name npm -value bun
+Set-Alias -name wget -value wget2
 
-# Set-Alias -name . -value cd .
-# Set-Alias -name .. -value cd ..
-
-# Function . { Set-Location -Path . }
-Function .. { Set-Location -Path .. }
+# Create functions available in Powershell.
+# function . { Set-Location -Path . } # . is a keyword in Powershell.
+# function .. { Set-Location -Path .. } # Not needed with my beautiful EnterKeyHandler :)
 function Admin {Start-Process PowerShell -Verb RunAs}
+function which ($command) {
+	Get-Command -Name $command -ErrorAction SilentlyContinue | 
+		Select-Object -ExpandProperty Path -ErrorAction SilentlyContinue;
+}
 
 Set-PSReadlineKeyHandler -Key Tab -Function MenuComplete
-Set-PSReadLineKeyHandler -Key Enter -BriefDescription 'Custom OhMyPoshEnterKeyHandler' -ScriptBlock {
-	try {
-		$executingCommand = Set-TransientPrompt;
-		[Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine();
-		# Write FTCS_COMMAND_EXECUTED after accepting the input - it should still happen before execution
-		if (("::FTCS_MARKS::" -eq "true") -and $executingCommand) {
-			Write-Host "$([char]0x1b)]133;C`a" -NoNewline;
+if ($ExecutionContext.SessionState.LanguageMode -ne "ConstrainedLanguage") {
+	Set-PSReadLineKeyHandler -Key Enter -ScriptBlock {
+		try {
+			$parseErrors = $null;
+			[Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$null, [ref]$null, [ref]$parseErrors, [ref]$null);
+			$executingCommand = $parseErrors.Count -eq 0;
+		}
+		finally {
+			$path = $null;
+			[Microsoft.Powershell.PSConsoleReadline]::GetBufferState([ref]$path, [ref]$null);
+			if (Test-Path -LiteralPath $path) {
+				Set-Location -Path $path;
+				[Microsoft.PowerShell.PSConsoleReadLine]::RevertLine();
+			}
+			[Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine();
+			# Write FTCS_COMMAND_EXECUTED after accepting the input - it should still happen before execution
+			if ($executingCommand) { Write-Host "$([char]0x1b)]133;C`a" -NoNewline; }
 		}
 	}
-	catch [System.Management.Automation.CommandNotFoundException] {
-		$path = $cursor = $null
-		[Microsoft.Powershell.PSConsoleReadline]::GetBufferState([ref]$path, [ref]$cursor);
-		if (Test-Path -LiteralPath $path) {
-			# Write-Host "$($path) is Path"
-			[Microsoft.PowerShell.PSConsoleReadLine]::RevertLine();
-			Set-Location -Path $path;
-		}
-		else {
-			# Write-Host "$($path) is not Path"
-		}
-		[Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine();
-	}
-	finally {}
 }
+
+Write-Host "Finished loading profile.";
